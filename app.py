@@ -142,6 +142,18 @@ def boats_get_post():
 	else:
 		return 'Method not recognized'
 
+@app.route("/owners/<id>/boats", methods=['GET'])
+def owner_get_boats():
+	if request.method == 'GET':
+		query = client.query(kind="boats")
+		query.add_filter("public", "=", True)
+		query.add_filter("owner", "=", id)
+		results = list(query.fetch())
+
+		for e in results:
+			e["id"] = e.key.id
+
+		return jsonify(results), 200
 
 def credentials_to_dict(credentials):
 	return {'token': credentials.token,
