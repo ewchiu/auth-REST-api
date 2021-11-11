@@ -1,13 +1,15 @@
 from flask import Flask, jsonify, request, redirect, session, url_for
 from google.cloud import datastore
 from uuid import uuid4
+from google.oauth2 import id_token
+from google.auth.transport import requests as reqs
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import requests
 import requests_oauthlib
+import client_secret
 import os
-import constants
 
 # This variable specifies the name of a file that contains the OAuth 2.0
 # information for this application, including its client_id and client_secret.
@@ -19,14 +21,11 @@ app.secret_key = str(uuid4)
 client = datastore.Client()
 
 SCOPES = [
-	'https://www.googleapis.com/auth/userinfo.email', 
 	'https://www.googleapis.com/auth/userinfo.profile', 
 	'openid'
 ]
 API_SERVICE_NAME = 'userinfo'
 API_VERSION = 'v2'
-
-oauth_url = 'https://accounts.google.com/o/oauth2/'
 
 @app.route('/')
 def index():
@@ -39,16 +38,15 @@ def index():
 def authorize():
 	# Create flow instance to manage the OAuth 2.0 Authorization Grant Flow steps.
 	flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-	CLIENT_SECRETS_FILE, scopes=SCOPES)
+		CLIENT_SECRETS_FILE, scopes=SCOPES)
 
 	flow.redirect_uri = url_for('oauth2callback', _external=True)
 
 	authorization_url, state = flow.authorization_url(
 		# Enable offline access so that you can refresh an access token without
 		# re-prompting the user for permission. Recommended for web server apps.
-		access_type='offline',
-		# Enable incremental authorization. Recommended as a best practice.
-		include_granted_scopes='true')
+		access_type='offline'
+		)
 
 	# Store the state so the callback can verify the auth server response.
 	session['state'] = state
@@ -70,14 +68,12 @@ def oauth2callback():
 
 	# Store credentials in the session.
 	credentials = flow.credentials
-	params = credentials_to_dict(credentials)
-	session['credentials'] = params
+	session['credentials'] = credentials_to_dict(credentials)
 	
-	params['grant_type'] = 'authorization_code'
-	response = requests.post("https://oauth2.googleapis.com/token", data=params).json()
-	print("token response: " + str(response))
-	token = response['access_token']
-	return f"<h1>your JWT is: {token['id_token']}"
+	req = reqs.Request()
+	id = id_token.verify_oauth2_token(token['id_token'], req, client_secret.client_id)
+
+	return f"<p>your JWT is: {token['id_token']}</p> <p>decoded JWT: {id}</p>"
 
 
 def credentials_to_dict(credentials):
