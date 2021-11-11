@@ -1,3 +1,4 @@
 /venv
 /__pycache__
-client_secret.py
+client_secret.json
+constants.py
