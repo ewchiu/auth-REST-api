@@ -3,11 +3,7 @@ from google.cloud import datastore
 from uuid import uuid4
 from google.oauth2 import id_token
 from google.auth.transport import requests as reqs
-import google.oauth2.credentials
 import google_auth_oauthlib.flow
-import googleapiclient.discovery
-import requests
-import requests_oauthlib
 import client_secret
 import os
 
@@ -75,6 +71,77 @@ def oauth2callback():
 
 	return f"<p>your JWT is: {token['id_token']}</p> <p>decoded JWT: {id}</p>"
 
+@app.route("/boats", methods=['POST','GET'])
+def boats_get_post():
+
+    # create new boat
+	if request.method == "POST":
+		content = request.get_json()
+		jwt = request.headers.get('Authorization')
+
+		if jwt:
+			req = reqs.Request()
+			jwt.split(" ")[1]
+
+			try:
+				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
+			except:
+				return 'The provided JWT could not be verified', 401
+
+		else:
+			return 'Please specify the JWT', 401
+
+		if 'name' not in content or 'type' not in content or 'length' not in content or 'public' not in content or len(content) != 4:
+			error = {"Error": "The request object is missing at least one of the required attributes"}
+			return jsonify(error), 400
+
+        # create new boat in Datastore
+		new_boats = datastore.entity.Entity(key=client.key("boats"))
+		new_boats.update({"name": content["name"], "type": content["type"], 
+			"length": content["length"], "public": content["public"], "owner": sub})
+		client.put(new_boats)
+
+        # formats response object
+		added_boat = {"id": new_boats.key.id, "name": content["name"], "type": content["type"],
+			"length": content["length"], "public": content["public"], "owner": sub}
+
+		return jsonify(added_boat), 201
+
+    # get list of boats
+	elif request.method == 'GET':
+		display_public = False
+		req = reqs.Request()
+		jwt = request.headers.get('Authorization')
+
+		if jwt:
+			req = reqs.Request()
+			jwt.split(" ")[1]
+
+			try:
+				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
+			except:
+				display_public = True
+		
+		else:
+			display_public = True
+
+		query = client.query(kind="boats")
+
+		if display_public:
+			query.add_filter("public", "=", True)
+		else:
+			query.add_filter("owner", "=", sub)
+
+		results = list(query.fetch())
+
+		for e in results:
+			e["id"] = e.key.id
+
+		return jsonify(results), 201
+
+	else:
+		return 'Method not recognized'
+
 
 def credentials_to_dict(credentials):
 	return {'token': credentials.token,
@@ -84,8 +151,6 @@ def credentials_to_dict(credentials):
 			'client_secret': credentials.client_secret,
 			'scopes': credentials.scopes
 			}
-
-
 
 
 if __name__ == '__main__':
