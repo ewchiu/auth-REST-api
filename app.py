@@ -3,6 +3,7 @@ from google.cloud import datastore
 from uuid import uuid4
 from google.oauth2 import id_token
 from google.auth.transport import requests as reqs
+from werkzeug.middleware.proxy_fix import ProxyFix
 import google_auth_oauthlib.flow
 import client_secret
 import os
@@ -15,6 +16,7 @@ CLIENT_SECRETS_FILE = "client_secret.json"
 
 app = Flask(__name__)
 app.secret_key = str(uuid4)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 client = datastore.Client()
 
