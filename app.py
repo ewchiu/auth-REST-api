@@ -143,7 +143,7 @@ def boats_get_post():
 		return 'Method not recognized'
 
 @app.route("/owners/<id>/boats", methods=['GET'])
-def owner_get_boats():
+def owner_get_boats(id):
 	if request.method == 'GET':
 		query = client.query(kind="boats")
 		query.add_filter("public", "=", True)
@@ -154,6 +154,36 @@ def owner_get_boats():
 			e["id"] = e.key.id
 
 		return jsonify(results), 200
+
+@app.route('boats/<id>', methods=['DELETE'])
+def delete_boat(id):
+	if request.method == 'DELETE':
+		boat_key = client.key('boats', int(id))
+		boat = client.get(key=boat_key)
+
+		jwt = request.headers.get('Authorization')
+
+		if jwt:
+			req = reqs.Request()
+			jwt.split(" ")[1]
+
+			try:
+				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
+			except:
+				return 'The provided JWT could not be verified', 401
+
+		else:
+			return 'Please specify the JWT', 401
+
+		if not boat:
+			error = {"Error": "No boat with this boat_id exists"}
+			return jsonify(error), 403
+		elif boat['owner'] != sub:
+			error = {"Error": "You are not the owner of this boat"}
+			return jsonify(error), 403
+
+		client.delete(boat_key)
+		return '', 204
 
 def credentials_to_dict(credentials):
 	return {'token': credentials.token,
