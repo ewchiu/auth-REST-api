@@ -7,6 +7,8 @@ import google_auth_oauthlib.flow
 import client_secret
 import os
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 # This variable specifies the name of a file that contains the OAuth 2.0
 # information for this application, including its client_id and client_secret.
 CLIENT_SECRETS_FILE = "client_secret.json"
@@ -25,10 +27,7 @@ API_VERSION = 'v2'
 
 @app.route('/')
 def index():
-	if 'credentials' not in session:
-		return redirect('authorize')
-
-	return f'<h1>you are already signed in, navigate here using the API</h1>'
+	return f'<h1>Welcome</h1> <p>Get your JWT <a href="/authorize">here</a></p>'
 
 @app.route('/authorize')
 def authorize():
@@ -69,7 +68,7 @@ def oauth2callback():
 	req = reqs.Request()
 	id = id_token.verify_oauth2_token(token['id_token'], req, client_secret.client_id)
 
-	return f"<p>your JWT is: {token['id_token']}</p> <p>decoded JWT: {id}</p>"
+	return f"<h1>User info</h1> <p>your JWT is: {token['id_token']}</p> <p>decoded JWT: {id}</p>"
 
 @app.route("/boats", methods=['POST','GET'])
 def boats_get_post():
@@ -199,9 +198,4 @@ def credentials_to_dict(credentials):
 
 
 if __name__ == '__main__':
-	# When running locally, disable OAuthlib's HTTPs verification.
-	# ACTION ITEM for developers:
-	#     When running in production *do not* leave this option enabled.
-	# os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 	app.run(host='0.0.0.0', debug=True)
