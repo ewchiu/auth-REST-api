@@ -81,10 +81,10 @@ def boats_get_post():
 
 		if jwt:
 			req = reqs.Request()
-			jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
+				sub = sub['sub']
 			except:
 				return 'The provided JWT could not be verified', 401
 
@@ -115,18 +115,19 @@ def boats_get_post():
 
 		if jwt:
 			req = reqs.Request()
-			jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
-			except:
+				sub = sub['sub']
+			except Exception as e:
 				display_public = True
+				print(f'Error in auth {e}')
 		
 		else:
 			display_public = True
 
 		query = client.query(kind="boats")
-
+		
 		if display_public:
 			query.add_filter("public", "=", True)
 		else:
@@ -137,7 +138,7 @@ def boats_get_post():
 		for e in results:
 			e["id"] = e.key.id
 
-		return jsonify(results), 201
+		return jsonify(results), 200
 
 	else:
 		return 'Method not recognized'
@@ -155,7 +156,7 @@ def owner_get_boats(id):
 
 		return jsonify(results), 200
 
-@app.route('boats/<id>', methods=['DELETE'])
+@app.route('/boats/<id>', methods=['DELETE'])
 def delete_boat(id):
 	if request.method == 'DELETE':
 		boat_key = client.key('boats', int(id))
@@ -165,11 +166,12 @@ def delete_boat(id):
 
 		if jwt:
 			req = reqs.Request()
-			jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
-			except:
+				sub = sub['sub']
+			except Exception as e:
+				print(e)
 				return 'The provided JWT could not be verified', 401
 
 		else:
@@ -178,6 +180,7 @@ def delete_boat(id):
 		if not boat:
 			error = {"Error": "No boat with this boat_id exists"}
 			return jsonify(error), 403
+
 		elif boat['owner'] != sub:
 			error = {"Error": "You are not the owner of this boat"}
 			return jsonify(error), 403
