@@ -79,10 +79,10 @@ def boats_get_post():
 	if request.method == "POST":
 		content = request.get_json()
 		jwt = request.headers.get('Authorization')
-		jwt = jwt.split(" ")[1]
 
 		if jwt:
 			req = reqs.Request()
+			jwt = jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
@@ -112,12 +112,11 @@ def boats_get_post():
     # get list of boats
 	elif request.method == 'GET':
 		display_public = False
-		req = reqs.Request()
 		jwt = request.headers.get('Authorization')
-		jwt = jwt.split(" ")[1]
 
 		if jwt:
 			req = reqs.Request()
+			jwt = jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
@@ -166,10 +165,10 @@ def delete_boat(id):
 		boat = client.get(key=boat_key)
 
 		jwt = request.headers.get('Authorization')
-		jwt = jwt.split(" ")[1]
 
 		if jwt:
 			req = reqs.Request()
+			jwt = jwt.split(" ")[1]
 
 			try:
 				sub = id_token.verify_oauth2_token(jwt, req, client_secret.client_id)
