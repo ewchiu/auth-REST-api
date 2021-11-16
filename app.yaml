@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-runtime: python
-env: flex
+runtime: python39
+env: standard
 
 runtime_config:
     python_version: 3
